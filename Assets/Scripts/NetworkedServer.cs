@@ -14,6 +14,8 @@ public class NetworkedServer : MonoBehaviour
     int hostID;
     int socketPort = 5491;
 
+
+    LinkedList<PlayerAccount> playerAccounts;
     // Start is called before the first frame update
     void Start()
     {
@@ -23,6 +25,8 @@ public class NetworkedServer : MonoBehaviour
         unreliableChannelID = config.AddChannel(QosType.Unreliable);
         HostTopology topology = new HostTopology(config, maxConnections);
         hostID = NetworkTransport.AddHost(topology, socketPort, null);
+
+        playerAccounts = new LinkedList<PlayerAccount>();
 
     }
 
@@ -68,6 +72,87 @@ public class NetworkedServer : MonoBehaviour
     private void ProcessRecievedMsg(string msg, int id)
     {
         Debug.Log("msg recieved = " + msg + ".  connection id = " + id);
+        string[] csv = msg.Split(',');
+        int signifier = int.Parse(csv[0]);
+        if(signifier == ClientToServerSignifiers.CreateAccount)
+        {
+
+            bool errorFound = false;
+            foreach( PlayerAccount pa in playerAccounts)
+            {
+                if(pa.name == csv[1])
+                {
+                    SendMessageToClient(ServerToCientSignifiers.CreateAccountFail + "",id);
+                    errorFound = true;
+
+
+                }
+            }
+            if (!errorFound)
+            {
+                SendMessageToClient(ServerToCientSignifiers.CreateAccountSuccess + "", id);
+                playerAccounts.AddLast(new PlayerAccount(csv[1], csv[2]));
+            }
+        }
+        else if(signifier == ClientToServerSignifiers.logInAccount)
+        {
+
+            bool userNameFound = false;
+
+            foreach (PlayerAccount pa in playerAccounts)
+            {
+                if (pa.name == csv[1])
+                {
+                    userNameFound = true;
+                    if (pa.password == csv[2])
+                    {
+                        SendMessageToClient(ServerToCientSignifiers.logInSuccess + "", id);
+                      
+                    }
+                    else
+                    {
+                        SendMessageToClient(ServerToCientSignifiers.logInFail + "", id);
+                      
+                    }
+                }
+            }
+
+            if (!userNameFound)
+            {
+                Debug.Log("user fail");
+                SendMessageToClient(ServerToCientSignifiers.logInFail + "", id);
+            }
+        }
+
+
     }
 
+}
+public class PlayerAccount
+{
+    public string name;
+   public  string password;
+    public PlayerAccount()
+    {
+
+    }
+    public PlayerAccount(string Name, string Password)
+    {
+        name = Name;
+        password = Password;
+    }
+}
+
+static public class ClientToServerSignifiers
+{
+    public const int CreateAccount = 1;
+   public const int logInAccount = 2;
+}
+static public class ServerToCientSignifiers
+{
+    public const int CreateAccountFail = 1;
+    public const int logInFail = 2;
+
+    public const int CreateAccountSuccess = 3;
+    public const int logInSuccess = 4;
 }
