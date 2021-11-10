@@ -13,9 +13,8 @@ public class NetworkedServer : MonoBehaviour
     int unreliableChannelID;
     int hostID;
     int socketPort = 5491;
- 
 
-
+  
     LinkedList<PlayerAccount> playerAccounts;
     // Start is called before the first frame update
 
@@ -29,7 +28,7 @@ public class NetworkedServer : MonoBehaviour
         unreliableChannelID = config.AddChannel(QosType.Unreliable);
         HostTopology topology = new HostTopology(config, maxConnections);
         hostID = NetworkTransport.AddHost(topology, socketPort, null);
-
+     
         playerAccounts = new LinkedList<PlayerAccount>();
         gameRooms = new LinkedList<GameRoom>();
 
@@ -48,7 +47,7 @@ public class NetworkedServer : MonoBehaviour
         byte error = 0;
 
         NetworkEventType recNetworkEvent = NetworkTransport.Receive(out recHostID, out recConnectionID, out recChannelID, recBuffer, bufferSize, out dataSize, out error);
-
+        
         switch (recNetworkEvent)
         {
             case NetworkEventType.Nothing:
@@ -89,6 +88,7 @@ public class NetworkedServer : MonoBehaviour
                 {
                     SendMessageToClient(ServerToCientSignifiers.CreateAccountFail + "", id);
                     errorFound = true;
+                    
 
 
                 }
@@ -128,6 +128,8 @@ public class NetworkedServer : MonoBehaviour
                 SendMessageToClient(ServerToCientSignifiers.logInFail + "", id);
             }
         }
+      
+
         else if (signifier == ClientToServerSignifiers.JoinGameRoomQueue)
         {
             if (playerWaitingForMatchWithID == -1)
@@ -144,15 +146,40 @@ public class NetworkedServer : MonoBehaviour
         else if (signifier == ClientToServerSignifiers.tictactoe)
         {
             GameRoom gr = GetGameRoomWithClientID(id);
-            if(gr != null)
+            if (gr != null)
             {
                 if (gr.playerID1 == id)
-                    SendMessageToClient(ServerToCientSignifiers.OpponentPlay+"" ,gr.playerID2);
+                    SendMessageToClient(ServerToCientSignifiers.OpponentPlay + "", gr.playerID2);
                 else
-                    SendMessageToClient(ServerToCientSignifiers.OpponentPlay+"" ,gr.playerID1);
+                    SendMessageToClient(ServerToCientSignifiers.OpponentPlay + "", gr.playerID1);
             }
         }
+        else if (signifier == ClientToServerSignifiers.chat)
+        {
+          
+        
+            GameRoom gr = GetGameRoomWithClientID(id);
+            if (gr != null)
+            {
+               
+                if (gr.playerID1 == id)
+                {
+                    SendMessageToClient(ServerToCientSignifiers.chatReply + "," + csv[1] + "," + gr.playerID1, gr.playerID1);
+                  //  if(gr.playerID2 != gr.playerID1)
+                    SendMessageToClient(ServerToCientSignifiers.chatReply + "," + csv[1] + "," + gr.playerID1, gr.playerID2);
+                  
+                }
+                else
+                {
+
+                    SendMessageToClient(ServerToCientSignifiers.chatReply + "," + csv[1] + "," + gr.playerID2, gr.playerID2);
+                  //  if (gr.playerID2 != gr.playerID1)
+                        SendMessageToClient(ServerToCientSignifiers.chatReply + "," + csv[1] + "," + gr.playerID2, gr.playerID1);
+                }
+            }
         }
+
+    }
     private GameRoom GetGameRoomWithClientID(int id)
     {
         foreach(GameRoom gr in gameRooms)
@@ -200,6 +227,7 @@ static public class ClientToServerSignifiers
    public const int logInAccount = 2;
     public const int JoinGameRoomQueue = 3;
     public const int tictactoe = 4;
+    public const int chat = 5;
 }
 static public class ServerToCientSignifiers
 {
@@ -210,4 +238,5 @@ static public class ServerToCientSignifiers
     public const int logInSuccess = 4;
     public const int OpponentPlay = 5;
     public const int GameStart = 6;
+    public const int chatReply = 7;
 }
