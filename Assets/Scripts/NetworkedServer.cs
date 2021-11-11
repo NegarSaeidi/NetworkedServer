@@ -138,22 +138,44 @@ public class NetworkedServer : MonoBehaviour
             {
                 GameRoom gr = new GameRoom(playerWaitingForMatchWithID, id);
                 gameRooms.AddLast(gr);
-                SendMessageToClient(ServerToCientSignifiers.GameStart + "", gr.playerID1);
-                SendMessageToClient(ServerToCientSignifiers.GameStart + "", gr.playerID2);
+                SendMessageToClient(ServerToCientSignifiers.chatStart+ "", gr.playerID1);
+                SendMessageToClient(ServerToCientSignifiers.chatStart + "", gr.playerID2);
                 playerWaitingForMatchWithID = -1;
             }
         }
         else if (signifier == ClientToServerSignifiers.tictactoe)
         {
+            
+                GameRoom gr = GetGameRoomWithClientID(id);
+                gameRooms.AddLast(gr);
+                SendMessageToClient(ServerToCientSignifiers.GameStart + ","+ gr.playerID1, gr.playerID1);
+                SendMessageToClient(ServerToCientSignifiers.GameStart + ","+ gr.playerID2, gr.playerID2);
+                playerWaitingForMatchWithID = -1;
+            }
+        else if (signifier == ClientToServerSignifiers.Playing)
+        {
+
             GameRoom gr = GetGameRoomWithClientID(id);
             if (gr != null)
             {
                 if (gr.playerID1 == id)
-                    SendMessageToClient(ServerToCientSignifiers.OpponentPlay + "", gr.playerID2);
+                {
+                    Debug.Log("room1");
+                    SendMessageToClient(ServerToCientSignifiers.OpponentPlay + "," + gr.playerID2 + "," + csv[1], gr.playerID2);
+                    SendMessageToClient(ServerToCientSignifiers.PlayerWait + "," + gr.playerID1 + "," + csv[1], gr.playerID1);
+
+                }
                 else
-                    SendMessageToClient(ServerToCientSignifiers.OpponentPlay + "", gr.playerID1);
+                {
+                    Debug.Log("room2");
+                    SendMessageToClient(ServerToCientSignifiers.OpponentPlay + "," + gr.playerID1 + "," + csv[1], gr.playerID1);
+                    SendMessageToClient(ServerToCientSignifiers.PlayerWait + "," + gr.playerID2 + "," + csv[1], gr.playerID2);
+                }
+                   
             }
         }
+
+
         else if (signifier == ClientToServerSignifiers.chat)
         {
           
@@ -228,6 +250,7 @@ static public class ClientToServerSignifiers
     public const int JoinGameRoomQueue = 3;
     public const int tictactoe = 4;
     public const int chat = 5;
+    public const int Playing = 6;
 }
 static public class ServerToCientSignifiers
 {
@@ -239,4 +262,6 @@ static public class ServerToCientSignifiers
     public const int OpponentPlay = 5;
     public const int GameStart = 6;
     public const int chatReply = 7;
+    public const int chatStart = 8;
+    public const int PlayerWait = 9;
 }
